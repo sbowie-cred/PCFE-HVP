@@ -241,7 +241,18 @@ app = dash.Dash(
 	suppress_callback_exceptions=True
 )
 app.title = "HVP Dashboard"
-server = app.server   # Gunicorn entry point: gunicorn app:server
+server = app.server   # gunicorn entry point: gunicorn app:server
+
+# health check endpoint for spcs
+@server.route('/health')
+def health_check():
+	"""simple health endpoint for spcs monitoring"""
+	try:
+		# test snowflake connection
+		session.sql('select 1').collect()
+		return {'status': 'healthy', 'snowflake': 'connected'}, 200
+	except Exception as e:
+		return {'status': 'unhealthy', 'error': str(e)}, 503
 
 # ============================================================================
 # Layout

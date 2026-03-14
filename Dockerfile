@@ -1,26 +1,39 @@
-FROM python:3.11-slim
+from python:3.11-slim
 
-# Install system dependencies for snowflake-snowpark-python
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    g++ \
-    libffi-dev \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
+# install system dependencies for snowflake-snowpark-python
+run apt-get update && apt-get install -y --no-install-recommends \
+	gcc \
+	g++ \
+	libffi-dev \
+	libssl-dev \
+	curl \
+	&& rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+workdir /app
 
-# Install Python dependencies first (layer caching)
-COPY requirements_dash.txt .
-RUN pip install --no-cache-dir -r requirements_dash.txt
+# install python dependencies first (layer caching)
+copy requirements_dash.txt .
+run pip install --no-cache-dir -r requirements_dash.txt && \
+	pip install --no-cache-dir gunicorn==21.2.0
 
-# Copy application source
-COPY app.py .
-COPY snowflake_session.py .
+# copy application source
+copy app.py .
+copy snowflake_session.py .
 
-# SPCS expects the service to listen on port 8080
-EXPOSE 8080
+# spcs expects the service to listen on port 8080
+expose 8080
 
-# Gunicorn serves the Dash app's underlying Flask server.
-# --workers 1 is recommended when using Snowpark sessions (session is global).
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--timeout", "120", "app:server"]
+# health check: ensure the app is responding
+healthcheck --interval=30s --timeout=10s --start-period=5s --retries=3 \
+	cmd curl -f http://localhost:8080/ || exit 1
+
+# gunicorn serves the dash app's underlying flask server.
+# --workers 1 is recommended when using snowpark sessions (session is global).
+# --timeout 120 is sufficient for complex snowflake queries.
+cmd ["gunicorn", \
+	"--bind", "0.0.0.0:8080", \
+	"--workers", "1", \
+	"--timeout", "120", \
+	"--access-logfile", "-", \
+	"--error-logfile", "-", \
+	"app:server"]
