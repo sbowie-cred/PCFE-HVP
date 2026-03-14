@@ -7,7 +7,6 @@ from snowflake.snowpark import Session
 
 CONNECTION_PARAMS = {
     "account": "YV35611.east-us-2.azure",
-    "user": "SAMUEL.BOWIE@CREDIGY.COM",
     "warehouse": "FRA",
     "authenticator": "externalbrowser"
 }

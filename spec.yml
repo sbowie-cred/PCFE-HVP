@@ -1,0 +1,19 @@
+spec:
+  containers:
+    - name: hvp-dashboard
+      image: <IMAGE_REPOSITORY>/<IMAGE_NAME>:<TAG>
+      # SPCS injects Snowflake credentials automatically;
+      # get_active_session() inside snowflake_session.py picks them up.
+      env:
+        SNOWFLAKE_WAREHOUSE: FRA
+      resources:
+        requests:
+          cpu: "0.5"
+          memory: 1G
+        limits:
+          cpu: "1"
+          memory: 2G
+  endpoints:
+    - name: dashboard
+      port: 8080
+      public: true
