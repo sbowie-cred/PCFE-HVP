@@ -1,9 +1,7 @@
 spec:
   containers:
     - name: hvp-dashboard
-      image: <IMAGE_REPOSITORY>/<IMAGE_NAME>:<TAG>
-      # SPCS injects Snowflake credentials automatically;
-      # get_active_session() inside snowflake_session.py picks them up.
+      image: YV35611.registry.east-us-2.snowflakecomputing.com/cashflow_engine.fra_pcfe/hvp-dashboard:latest
       env:
         SNOWFLAKE_WAREHOUSE: FRA
       resources:

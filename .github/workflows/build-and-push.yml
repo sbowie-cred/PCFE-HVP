@@ -1,0 +1,46 @@
+name: build and push hvp dashboard to snowflake
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: check out code
+        uses: actions/checkout@v4
+
+      - name: install snowflake cli
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install snowflake-cli-labs
+
+      - name: authenticate with snowflake (docker registry)
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USERNAME }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_DATABASE: CASHFLOW_ENGINE
+          SNOWFLAKE_SCHEMA: FRA_PCFE
+          SNOWFLAKE_WAREHOUSE: FRA
+          SNOWFLAKE_ROLE: SF_FRA_REPORTER
+        run: |
+          snow spcs image-registry login --temporary-connection
+
+      - name: set up docker buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: build and push hvp dashboard image
+        uses: docker/build-push-action@v6
+        env:
+          REPO: ${{ secrets.SNOWFLAKE_IMAGE_URL }}/hvp_dashboard
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.REPO }}:latest
+            ${{ env.REPO }}:${{ github.sha }}
